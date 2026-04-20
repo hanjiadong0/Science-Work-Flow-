@@ -1,0 +1,48 @@
+{
+  "id": "cmb_lcdm_precision",
+  "name": "Flat LCDM Precision Check",
+  "task_type": "tool_precision",
+  "default_workflow": "one_shot",
+  "supported_workflows": [
+    "one_shot"
+  ],
+  "prompt": "Use a CAMB-like solver to estimate a flat LCDM cosmology summary from synthetic CMB observables and report the resulting H0, omega_m, omega_b, and sigma8 values.",
+  "ground_truth": {
+    "H0": 67.4,
+    "omega_m": 0.315,
+    "omega_b": 0.049,
+    "sigma8": 0.811
+  },
+  "expected_tools": [
+    "camb",
+    "numpy"
+  ],
+  "domain_context": [
+    "Assume a flat LCDM cosmology.",
+    "Reject negative density parameters.",
+    "Document each parameter passed to the solver."
+  ],
+  "priors": {
+    "H0": [
+      55.0,
+      80.0
+    ],
+    "omega_m": [
+      0.1,
+      0.5
+    ],
+    "omega_b": [
+      0.01,
+      0.09
+    ],
+    "sigma8": [
+      0.6,
+      1.1
+    ]
+  },
+  "metadata": {
+    "scientific_domain": "cosmology",
+    "benchmark_type": "synthetic_precision"
+  }
+}
+

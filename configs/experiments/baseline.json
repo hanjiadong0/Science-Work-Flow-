@@ -1,0 +1,51 @@
+{
+  "id": "lab-proposal-baseline",
+  "name": "Lab Proposal Baseline",
+  "description": "Starter experiment matrix derived from Cambagent_lab_proposal.pdf.",
+  "task_files": [
+    "../tasks/cmb_lcdm_precision.json",
+    "../tasks/exoplanet_inference.json"
+  ],
+  "models": [
+    "small-baseline-llm",
+    "frontier-science-llm"
+  ],
+  "grounding_modes": [
+    "plain",
+    "retrieval_augmented"
+  ],
+  "workflows": [
+    "one_shot",
+    "deep_research"
+  ],
+  "stress_tests": [
+    {
+      "id": "parameter_misconfiguration",
+      "description": "Inject slightly inconsistent tool arguments into precision tasks.",
+      "severity": "medium",
+      "applies_to": [
+        "tool_precision"
+      ],
+      "effect_size": 0.12
+    },
+    {
+      "id": "missing_data",
+      "description": "Remove part of the observational context so inference is under-informed.",
+      "severity": "high",
+      "applies_to": [
+        "research_inference"
+      ],
+      "effect_size": 0.18
+    },
+    {
+      "id": "weak_priors",
+      "description": "Relax priors to stress posterior stability and calibration.",
+      "severity": "medium",
+      "applies_to": [
+        "research_inference"
+      ],
+      "effect_size": 0.14
+    }
+  ],
+  "report_path": "../../outputs/lab_proposal_baseline_report.json"
+}

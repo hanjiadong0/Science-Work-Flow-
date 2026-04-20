@@ -1,0 +1,44 @@
+{
+  "id": "exoplanet_inference",
+  "name": "Exoplanet Posterior Recovery",
+  "task_type": "research_inference",
+  "default_workflow": "deep_research",
+  "supported_workflows": [
+    "deep_research"
+  ],
+  "prompt": "Infer exoplanet parameters from a synthetic radial-velocity data summary and explain the uncertainty in the planet mass, orbital period, and eccentricity estimates.",
+  "ground_truth": {
+    "planet_mass_mj": 0.73,
+    "orbital_period_days": 12.34,
+    "eccentricity": 0.06
+  },
+  "expected_tools": [
+    "numpy",
+    "emcee",
+    "paper_index"
+  ],
+  "domain_context": [
+    "Use a physically valid Keplerian model.",
+    "Eccentricity must remain in [0, 1).",
+    "Posterior summaries should include uncertainty awareness."
+  ],
+  "priors": {
+    "planet_mass_mj": [
+      0.1,
+      5.0
+    ],
+    "orbital_period_days": [
+      1.0,
+      100.0
+    ],
+    "eccentricity": [
+      0.0,
+      0.95
+    ]
+  },
+  "metadata": {
+    "scientific_domain": "exoplanets",
+    "benchmark_type": "synthetic_inference"
+  }
+}
+
