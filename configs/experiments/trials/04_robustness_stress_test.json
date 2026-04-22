@@ -1,0 +1,59 @@
+{
+  "id": "trial-robustness-stress-test",
+  "name": "Trial 04 Robustness Stress Test",
+  "description": "Stress the proposal tasks with incomplete data, weak priors, degeneracy, and tool misconfiguration.",
+  "task_files": [
+    "../../tasks/cmb_lcdm_precision.json",
+    "../../tasks/exoplanet_inference.json",
+    "../../tasks/cmb_joint_inference.json"
+  ],
+  "models": [
+    "frontier-science-llm"
+  ],
+  "grounding_modes": [
+    "retrieval_augmented"
+  ],
+  "workflows": [
+    "one_shot",
+    "deep_research"
+  ],
+  "stress_tests": [
+    {
+      "id": "parameter_misconfiguration",
+      "description": "Inject slightly inconsistent tool arguments into precision-style runs.",
+      "severity": "medium",
+      "applies_to": [
+        "tool_precision"
+      ],
+      "effect_size": 0.12
+    },
+    {
+      "id": "missing_data",
+      "description": "Remove part of the observational context so inference becomes under-informed.",
+      "severity": "high",
+      "applies_to": [
+        "research_inference"
+      ],
+      "effect_size": 0.18
+    },
+    {
+      "id": "weak_priors",
+      "description": "Relax prior information to stress posterior calibration and stability.",
+      "severity": "medium",
+      "applies_to": [
+        "research_inference"
+      ],
+      "effect_size": 0.14
+    },
+    {
+      "id": "degenerate_regime",
+      "description": "Push inference toward partially degenerate parameter combinations and overlapping explanations.",
+      "severity": "high",
+      "applies_to": [
+        "research_inference"
+      ],
+      "effect_size": 0.22
+    }
+  ],
+  "report_path": "../../../outputs/trials/04_robustness_stress_test_report.json"
+}

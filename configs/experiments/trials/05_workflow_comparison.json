@@ -1,0 +1,40 @@
+{
+  "id": "trial-workflow-comparison",
+  "name": "Trial 05 Workflow Comparison",
+  "description": "Directly compare one_shot and deep_research on the same cosmology-style inference task.",
+  "task_files": [
+    "../../tasks/cmb_joint_inference.json"
+  ],
+  "models": [
+    "frontier-science-llm"
+  ],
+  "grounding_modes": [
+    "plain",
+    "retrieval_augmented"
+  ],
+  "workflows": [
+    "one_shot",
+    "deep_research"
+  ],
+  "stress_tests": [
+    {
+      "id": "missing_data",
+      "description": "Remove part of the synthetic context to test whether deeper workflows recover more gracefully.",
+      "severity": "high",
+      "applies_to": [
+        "research_inference"
+      ],
+      "effect_size": 0.18
+    },
+    {
+      "id": "weak_priors",
+      "description": "Reduce prior support to test whether extra reasoning steps help or hurt calibration.",
+      "severity": "medium",
+      "applies_to": [
+        "research_inference"
+      ],
+      "effect_size": 0.14
+    }
+  ],
+  "report_path": "../../../outputs/trials/05_workflow_comparison_report.json"
+}

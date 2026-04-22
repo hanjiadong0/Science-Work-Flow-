@@ -11,6 +11,7 @@ Implemented here:
 - a reusable experiment specification format in `configs/experiments/`
 - task definitions for precision and inference benchmarks in `configs/tasks/`
 - a runner that compares workflows, models, grounding modes, and stress tests
+- a notebook-first experiment flow in `notebooks/01_lab_proposal_experiment.ipynb`
 
 ## Core Setup
 
@@ -63,4 +64,3 @@ This scaffold does not yet include:
 - benchmark datasets or plotting pipelines
 
 Those are the natural next implementation layers on top of the structure created here.
-

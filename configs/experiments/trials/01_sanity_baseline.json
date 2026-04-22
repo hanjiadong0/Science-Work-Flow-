@@ -1,0 +1,22 @@
+{
+  "id": "trial-sanity-baseline",
+  "name": "Trial 01 Sanity Baseline",
+  "description": "Clean baseline run for the proposal-derived task suite before ablations or stress tests.",
+  "task_files": [
+    "../../tasks/cmb_lcdm_precision.json",
+    "../../tasks/exoplanet_inference.json",
+    "../../tasks/cmb_joint_inference.json"
+  ],
+  "models": [
+    "frontier-science-llm"
+  ],
+  "grounding_modes": [
+    "retrieval_augmented"
+  ],
+  "workflows": [
+    "one_shot",
+    "deep_research"
+  ],
+  "stress_tests": [],
+  "report_path": "../../../outputs/trials/01_sanity_baseline_report.json"
+}

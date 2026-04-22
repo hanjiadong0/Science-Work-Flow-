@@ -1,0 +1,61 @@
+{
+  "id": "trial-failure-taxonomy-audit",
+  "name": "Trial 06 Failure Taxonomy Audit",
+  "description": "Broad sweep designed to collect representative failure cases for qualitative review and taxonomy building.",
+  "task_files": [
+    "../../tasks/cmb_lcdm_precision.json",
+    "../../tasks/exoplanet_inference.json",
+    "../../tasks/cmb_joint_inference.json"
+  ],
+  "models": [
+    "small-baseline-llm",
+    "frontier-science-llm"
+  ],
+  "grounding_modes": [
+    "plain",
+    "retrieval_augmented"
+  ],
+  "workflows": [
+    "one_shot",
+    "deep_research"
+  ],
+  "stress_tests": [
+    {
+      "id": "parameter_misconfiguration",
+      "description": "Inject slightly inconsistent tool arguments into precision-style runs.",
+      "severity": "medium",
+      "applies_to": [
+        "tool_precision"
+      ],
+      "effect_size": 0.12
+    },
+    {
+      "id": "missing_data",
+      "description": "Remove part of the observational context so inference becomes under-informed.",
+      "severity": "high",
+      "applies_to": [
+        "research_inference"
+      ],
+      "effect_size": 0.18
+    },
+    {
+      "id": "weak_priors",
+      "description": "Relax prior information to stress posterior calibration and stability.",
+      "severity": "medium",
+      "applies_to": [
+        "research_inference"
+      ],
+      "effect_size": 0.14
+    },
+    {
+      "id": "degenerate_regime",
+      "description": "Push inference toward partially degenerate parameter combinations and overlapping explanations.",
+      "severity": "high",
+      "applies_to": [
+        "research_inference"
+      ],
+      "effect_size": 0.22
+    }
+  ],
+  "report_path": "../../../outputs/trials/06_failure_taxonomy_audit_report.json"
+}

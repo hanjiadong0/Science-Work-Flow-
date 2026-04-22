@@ -1,0 +1,24 @@
+{
+  "id": "trial-backbone-model-ablation",
+  "name": "Trial 02 Backbone Model Ablation",
+  "description": "Hold grounding fixed and compare weak, medium, and frontier models on the proposal task suite.",
+  "task_files": [
+    "../../tasks/cmb_lcdm_precision.json",
+    "../../tasks/exoplanet_inference.json",
+    "../../tasks/cmb_joint_inference.json"
+  ],
+  "models": [
+    "small-baseline-llm",
+    "medium-science-llm",
+    "frontier-science-llm"
+  ],
+  "grounding_modes": [
+    "retrieval_augmented"
+  ],
+  "workflows": [
+    "one_shot",
+    "deep_research"
+  ],
+  "stress_tests": [],
+  "report_path": "../../../outputs/trials/02_backbone_model_ablation_report.json"
+}

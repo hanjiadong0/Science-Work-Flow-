@@ -1,0 +1,51 @@
+{
+  "id": "cmb_joint_inference",
+  "name": "CMB Joint Parameter Recovery",
+  "task_type": "research_inference",
+  "default_workflow": "deep_research",
+  "supported_workflows": [
+    "one_shot",
+    "deep_research"
+  ],
+  "prompt": "Infer flat LCDM parameters from a synthetic CMB data summary, explain the uncertainty in H0, omega_m, omega_b, and sigma8, and justify whether a short one-shot workflow or a deeper research workflow is more reliable for this case.",
+  "ground_truth": {
+    "H0": 67.7,
+    "omega_m": 0.311,
+    "omega_b": 0.0493,
+    "sigma8": 0.809
+  },
+  "expected_tools": [
+    "camb",
+    "emcee",
+    "numpy"
+  ],
+  "domain_context": [
+    "Assume a flat LCDM cosmology unless strong evidence suggests otherwise.",
+    "Reject negative density parameters and clearly flag any unphysical posterior support.",
+    "Posterior summaries should include uncertainty and note when priors dominate the result.",
+    "Document solver and inference assumptions before interpreting parameter shifts."
+  ],
+  "priors": {
+    "H0": [
+      55.0,
+      80.0
+    ],
+    "omega_m": [
+      0.1,
+      0.5
+    ],
+    "omega_b": [
+      0.01,
+      0.09
+    ],
+    "sigma8": [
+      0.6,
+      1.1
+    ]
+  },
+  "metadata": {
+    "scientific_domain": "cosmology",
+    "benchmark_type": "synthetic_joint_inference",
+    "notes": "Added to support direct one_shot vs deep_research comparison on the same target task."
+  }
+}

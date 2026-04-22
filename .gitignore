@@ -1,5 +1,6 @@
 __pycache__/
 *.py[cod]
+.ipynb_checkpoints/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
@@ -8,7 +9,10 @@ build/
 dist/
 *.egg-info/
 .venv/
+.venv-agents/
 venv/
-outputs/*
-!outputs/.gitignore
-configs/experiments/outputs/
+.codex-tmp/
+outputs/
+external/
+projects/LeanCourse25/
+references/clear/*.pdf

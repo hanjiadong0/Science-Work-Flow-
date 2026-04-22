@@ -1,0 +1,23 @@
+{
+  "id": "trial-grounding-ablation",
+  "name": "Trial 03 Grounding Ablation",
+  "description": "Compare plain and retrieval-augmented execution while holding the model fixed.",
+  "task_files": [
+    "../../tasks/cmb_lcdm_precision.json",
+    "../../tasks/exoplanet_inference.json",
+    "../../tasks/cmb_joint_inference.json"
+  ],
+  "models": [
+    "frontier-science-llm"
+  ],
+  "grounding_modes": [
+    "plain",
+    "retrieval_augmented"
+  ],
+  "workflows": [
+    "one_shot",
+    "deep_research"
+  ],
+  "stress_tests": [],
+  "report_path": "../../../outputs/trials/03_grounding_ablation_report.json"
+}
