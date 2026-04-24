@@ -232,7 +232,8 @@ So the deliverable is both technical and research-oriented. It should produce re
 
 ## What the Cited Materials Contribute
 
-The proposal lists three important references. They play different roles.
+The proposal lists three important paper references, and this repo now also
+keeps one Lean-in-physics archive as a project-facing background reference.
 
 ### 1. `arXiv:2603.20179`
 
@@ -275,6 +276,27 @@ Why it matters:
 - extends the picture from one scientific workflow to a broader research assistant model
 - emphasizes expert evaluation, review-style feedback, and cross-disciplinary use
 - reinforces the proposal's focus on strengths, weaknesses, and limitations rather than hype
+
+### 4. `ITPsInPhysicsArchive`
+
+Link: https://github.com/lean-phys-community/ITPsInPhysicsArchive
+
+What it is:
+
+- a curated GitHub archive of projects related to interactive theorem provers in physics
+
+Why it matters:
+
+- the proposal already has substantial physics background, so this gives the repo a Lean-facing physics reference instead of only agent papers
+- it helps frame Lean not just as a theorem prover in the abstract, but as part of an existing formalization landscape tied to physics
+- it gives better inspiration for future benchmark extensions where scientific claims, constraints, or derivations could be checked against formal structures
+
+The best way to use this archive is as a `reference atlas` rather than a normal
+paper citation:
+
+- `landscape`: map which parts of physics already have formalization activity
+- `examples`: pull concrete Lean-adjacent projects for style and scope references
+- `transfer`: identify which proposal tasks could later gain formal or semi-formal validation layers
 
 ## Simple Mental Model
 

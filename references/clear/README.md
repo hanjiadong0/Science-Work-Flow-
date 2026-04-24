@@ -18,3 +18,7 @@ Primary sources:
 - https://arxiv.org/abs/2507.07257
 - https://arxiv.org/abs/2510.26887
 - https://arxiv.org/abs/2406.01940
+
+Related Lean background:
+
+- `references/lean/README.md`
