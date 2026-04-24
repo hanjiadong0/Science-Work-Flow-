@@ -1,0 +1,475 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  pdftitle={Exploration Report: Agent Structure of CMBAgent and OpenGauss},
+  pdfauthor={OpenAI Codex}
+}
+
+\lstdefinestyle{plaincode}{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  breaklines=true,
+  columns=fullflexible
+}
+
+\title{Exploration Report:\\Agent Structure of CMBAgent and OpenGauss}
+\author{Prepared for the Science-Work-Flow project}
+\date{April 22, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This report studies the internal agent structure of the locally cloned
+\texttt{cmbagent} and \texttt{OpenGauss} repositories without relying on any
+remote API execution. The purpose is to understand how each system is built,
+what kind of ``agent'' each project actually implements, and how the two
+projects fit the evaluation framework described in
+\texttt{Cambagent\_lab\_proposal.pdf}. The main result is that CMBAgent is a
+role-specialized multi-agent workflow graph for scientific tasks, while
+OpenGauss is a project-centered orchestration shell for Lean workflows and
+managed tool-using backend sessions. They are related, but they solve different
+layers of the problem.
+\end{abstract}
+
+\section{Goal and Method}
+The exploration was done by reading the local source code under:
+\begin{itemize}[leftmargin=1.5em]
+\item \texttt{external/cmbagent}
+\item \texttt{external/OpenGauss}
+\end{itemize}
+
+The focus was not on installation, credentials, or live provider access. The
+focus was on structure:
+\begin{itemize}[leftmargin=1.5em]
+\item where the main runtime entry points are,
+\item how agents are created,
+\item how control and handoff are represented,
+\item how tools and execution are attached,
+\item how each repository stores project state, and
+\item how the two systems relate to the proposal's evaluation logic.
+\end{itemize}
+
+The most informative files for CMBAgent were:
+\begin{itemize}[leftmargin=1.5em]
+\item \texttt{cmbagent/cmbagent.py}
+\item \path{cmbagent/base_agent.py}
+\item \path{cmbagent/hand_offs.py}
+\item \texttt{cmbagent/functions/registration.py}
+\item \path{cmbagent/workflows/one_shot.py}
+\end{itemize}
+
+The most informative files for OpenGauss were:
+\begin{itemize}[leftmargin=1.5em]
+\item \texttt{cli.py}
+\item \path{run_agent.py}
+\item \path{gauss_cli/project.py}
+\item \path{gauss_cli/autoformalize.py}
+\item \path{gauss_cli/commands.py}
+\item \path{swarm_manager.py}
+\item \texttt{toolsets.py}
+\end{itemize}
+
+\section{CMBAgent: A Scientific Multi-Agent Workflow Graph}
+
+\subsection{Core Design Idea}
+CMBAgent is built around a strong idea: scientific work is decomposed into
+named agent roles, and those roles are connected by explicit handoff logic.
+This means the architecture is not just ``call one model with tools.'' Instead,
+it is a graph of cooperating agents such as planner, researcher, engineer,
+controller, executor, summarizer, and formatter agents.
+
+The central runtime lives in \texttt{cmbagent/cmbagent.py}. Its
+\texttt{CMBAgent} class prepares the working directory, shared context,
+selected model configuration, and imported agent definitions. It then registers
+functions and handoffs before starting a multi-agent chat pattern.
+
+\subsection{How Agents Are Defined}
+One of the clearest structural choices in CMBAgent is that agents can be
+defined in two ways:
+\begin{enumerate}[leftmargin=1.5em]
+\item a Python class plus YAML configuration, or
+\item YAML only, using \texttt{BaseAgent} as a wrapper.
+\end{enumerate}
+
+This happens in the \texttt{import\_agents()} function in
+\texttt{cmbagent.py}. The loader walks the \texttt{agents/} directory, detects
+whether an agent folder has a Python file, and dynamically builds the right
+class. That gives CMBAgent a hybrid architecture:
+\begin{itemize}[leftmargin=1.5em]
+\item simple agents stay declarative,
+\item complex agents can add custom Python behavior,
+\item the overall agent inventory can grow without rewriting the runtime.
+\end{itemize}
+
+\subsection{Role Inventory}
+The agent tree shows that CMBAgent groups roles by function rather than by a
+single monolithic prompt. The main categories are:
+\begin{itemize}[leftmargin=1.5em]
+\item \textbf{planning}: planner, plan\_setter, plan\_recorder, plan\_reviewer,
+reviewer formatter, review recorder
+\item \textbf{research}: researcher, researcher formatter, researcher executor,
+summarizer, summarizer formatter
+\item \textbf{coding}: engineer, engineer\_nest, engineer formatter, executor,
+executor\_bash, executor formatter
+\item \textbf{control}: controller, control starter, terminator
+\item \textbf{hypothesis}: idea maker, idea hater, idea saver, formatter roles
+\item \textbf{specialized}: camb context and camb response formatter
+\item \textbf{keywords/admin/install}: keyword finders, installer, admin
+\end{itemize}
+
+This is important for the proposal because it matches an evaluation style based
+on failure localization. If the planner is weak, that is a planning failure. If
+the engineer writes wrong code, that is an execution or reasoning failure. If
+the controller routes badly, that is a control failure. The architecture
+already exposes these categories.
+
+\subsection{Runtime Objects and Control Flow}
+CMBAgent does not rely on one custom scheduler from scratch. It leans on AG2
+and uses:
+\begin{itemize}[leftmargin=1.5em]
+\item \texttt{ContextVariables}
+\item \texttt{AutoPattern}
+\item group chat management
+\item conditional handoff targets
+\item nested chats
+\end{itemize}
+
+At a high level, the control flow is:
+\begin{lstlisting}[style=plaincode]
+task
+-> CMBAgent(...)
+-> import_agents()
+-> register_functions_to_agents(...)
+-> register_all_hand_offs(...)
+-> initiate_group_chat(...)
+-> controller / researcher / engineer / terminator loops
+\end{lstlisting}
+
+This means the system is graph-structured first and prompt-structured second.
+The routing graph is part of the architecture, not a hidden side effect.
+
+\subsection{Handoffs Are a First-Class Abstraction}
+The file \path{hand_offs.py} is one of the most revealing files in the whole
+repository. It explicitly wires agent-to-agent flow.
+
+Examples of the structural patterns in that file:
+\begin{itemize}[leftmargin=1.5em]
+\item simple linear chains such as planner $\rightarrow$ formatter
+$\rightarrow$ recorder
+\item conditional routing based on context variables, such as whether feedback
+rounds remain
+\item mode-dependent routing, for example when response formatters return to the
+controller versus a direct engineer path
+\item message-history reduction for formatter and recorder roles
+\item nested chat construction for the engineer execution loop
+\item LLM-driven controller branching with choices such as engineer,
+researcher, idea-maker, idea-hater, or terminator
+\end{itemize}
+
+This gives CMBAgent a recognizable workflow-engine flavor. It is not merely
+``multi-agent'' in a loose marketing sense. It is a controlled graph with
+defined transitions and explicit branch points.
+
+\subsection{Why the Controller Matters}
+The controller is the main orchestration brain once the graph is live. In
+\path{hand_offs.py}, the controller can route work to different role agents
+based on language-model conditions. That is a powerful but also risky design:
+\begin{itemize}[leftmargin=1.5em]
+\item it makes the workflow adaptive,
+\item but it also creates a specific failure mode where incorrect routing can
+propagate downstream errors.
+\end{itemize}
+
+For the proposal, this is valuable rather than inconvenient. A core goal of the
+proposal is to characterize failure modes of scientific agents, and routing
+mistakes are a concrete class of such failures.
+
+\subsection{Execution Model}
+CMBAgent has a strong separation between reasoning agents and execution agents.
+The engineer proposes code-oriented work; executors run or save outputs; format
+agents compress results; the controller decides what happens next. This
+separation is useful for scientific evaluation because it lets the benchmark ask
+where an error came from:
+\begin{itemize}[leftmargin=1.5em]
+\item bad planning,
+\item bad scientific reasoning,
+\item bad code generation,
+\item bad tool execution,
+\item bad summarization,
+\item or bad routing.
+\end{itemize}
+
+\subsection{Architectural Strengths of CMBAgent}
+\begin{itemize}[leftmargin=1.5em]
+\item Very explicit role decomposition
+\item Good match for workflow-level evaluation
+\item Natural support for failure taxonomies
+\item Hybrid YAML plus Python agent definitions keep the inventory extensible
+\item Clear place for domain-specific scientific context agents
+\end{itemize}
+
+\subsection{Architectural Limitations of CMBAgent}
+\begin{itemize}[leftmargin=1.5em]
+\item The routing logic is powerful, but complexity grows quickly
+\item Behavior depends on several interacting agent prompts and control edges
+\item Some failures are emergent across handoffs rather than local to one file
+\item External provider assumptions are still present in default model paths
+\end{itemize}
+
+\section{OpenGauss: A Project-Centered Lean Workflow Orchestrator}
+
+\subsection{Core Design Idea}
+OpenGauss is structurally different. It is not primarily a static graph of many
+named in-process roles. It is a project shell around Lean work. Its main job is
+to help a user or backend agent operate inside a Lean project, invoke workflows
+such as \texttt{/prove} and \texttt{/formalize}, and manage child sessions,
+tooling, and project metadata.
+
+The most important architectural decision is that OpenGauss treats the
+\textbf{project} as the stable object, not the individual agent role.
+
+\subsection{The Project Model Is Foundational}
+The file \path{gauss_cli/project.py} shows that OpenGauss begins by finding
+or validating a Lean project. It recognizes a project root, expects a
+\texttt{.gauss/project.yaml} manifest, validates schema details, locates the
+Lean root, and creates runtime/cache/workflow directories.
+
+That means OpenGauss stores state in a much more project-native way than
+CMBAgent. The important object is \texttt{GaussProject}, which packages:
+\begin{itemize}[leftmargin=1.5em]
+\item project root
+\item manifest path
+\item Lean root
+\item runtime/cache/workflow directories
+\item source metadata
+\item blueprint markers
+\end{itemize}
+
+This makes OpenGauss feel closer to a developer toolchain or research shell than
+to a pure benchmark agent.
+
+\subsection{User Interface and Command Surface}
+The top-level \texttt{cli.py} and \path{gauss_cli/commands.py} make it clear
+that OpenGauss is meant to be operated interactively. Its user model is:
+\begin{enumerate}[leftmargin=1.5em]
+\item start the Gauss CLI in or for a project,
+\item issue slash commands,
+\item let the system launch or manage workflows,
+\item inspect, attach to, or continue sessions.
+\end{enumerate}
+
+This is a strong contrast with CMBAgent's more programmatic workflow entry
+points such as \texttt{one\_shot} and \texttt{deep\_research}.
+
+\subsection{The Generic Tool-Calling Agent}
+The file \path{run_agent.py} contains the reusable runtime class
+\texttt{AIAgent}. This class is the closest OpenGauss equivalent to a general
+agent engine. It manages:
+\begin{itemize}[leftmargin=1.5em]
+\item model/provider selection
+\item tool calling loops
+\item iteration budgets
+\item context compression
+\item prompt assembly
+\item scratchpad and trajectory handling
+\item tool execution and error recovery
+\end{itemize}
+
+This is a broad, reusable runtime, but it is still not the same architecture as
+CMBAgent. Here, the emphasis is on a robust single agent runtime with tools and
+managed child sessions, not on a fixed many-role graph.
+
+\subsection{Managed Workflow Launching}
+The file \path{gauss_cli/autoformalize.py} reveals OpenGauss's real
+specialization. It normalizes workflow commands such as:
+\begin{itemize}[leftmargin=1.5em]
+\item \texttt{/prove}
+\item \texttt{/draft}
+\item \texttt{/review}
+\item \texttt{/checkpoint}
+\item \texttt{/refactor}
+\item \texttt{/golf}
+\item \texttt{/autoprove}
+\item \texttt{/formalize}
+\item \texttt{/autoformalize}
+\end{itemize}
+
+It then builds managed launch plans, backend-specific runtime context, staged
+assets, and handoff requests for child sessions. In other words, OpenGauss
+specializes in \emph{workflow dispatch over Lean projects}.
+
+This explains why OpenGauss is a strong complement to the proposal, but not a
+drop-in substitute for CMBAgent. It is excellent for formalization and theorem
+workflow support, but it is not designed around cosmology-style multi-agent
+scientific planning and execution.
+
+\subsection{Swarm Management and Sessions}
+The file \path{swarm_manager.py} adds another important layer: background
+workflow management. OpenGauss tracks task identifiers, progress, process state,
+recent output, attach/detach behavior, and per-task Lean status. This makes it
+possible to treat long-running formalization work as managed sessions rather
+than as one opaque model call.
+
+That is architecturally significant because it means OpenGauss is built for:
+\begin{itemize}[leftmargin=1.5em]
+\item persistent work on projects,
+\item long-lived background jobs,
+\item reattachment,
+\item and developer-style control over sessions.
+\end{itemize}
+
+\subsection{Tool Discipline}
+The file \texttt{toolsets.py} shows another deliberate design choice. Gauss
+keeps its default tool surface narrow:
+\begin{itemize}[leftmargin=1.5em]
+\item file operations
+\item web search
+\item browser actions
+\end{itemize}
+
+This is a smaller and more disciplined tool surface than one might expect from
+a broad autonomous agent framework. The advantage is that it narrows the
+behavioral space around the actual tasks OpenGauss wants to support.
+
+\subsection{Architectural Strengths of OpenGauss}
+\begin{itemize}[leftmargin=1.5em]
+\item Strong project model for Lean work
+\item Explicit managed workflows for proving and formalization
+\item Good session and swarm control for long-running tasks
+\item Clear CLI entry points that users can operate directly
+\item Good fit for complementary evaluation on formalization tasks
+\end{itemize}
+
+\subsection{Architectural Limitations of OpenGauss}
+\begin{itemize}[leftmargin=1.5em]
+\item It is not primarily a scientific multi-agent benchmark graph
+\item Domain reasoning is shaped by the Lean project and workflow layer
+\item Evaluation needs to focus on formalization outcomes, not just generic chat
+\item Its architecture is less naturally decomposed into planner/researcher/
+engineer roles than CMBAgent
+\end{itemize}
+
+\section{Direct Comparison}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.24\textwidth} >{\raggedright\arraybackslash}p{0.34\textwidth} >{\raggedright\arraybackslash}p{0.34\textwidth}}
+\toprule
+\textbf{Dimension} & \textbf{CMBAgent} & \textbf{OpenGauss} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Dimension} & \textbf{CMBAgent} & \textbf{OpenGauss} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+Primary unit of organization &
+Named role agents connected by handoffs &
+Lean project plus workflow commands and managed sessions \\
+
+Main runtime style &
+Graph-like multi-agent orchestration &
+Interactive CLI plus backend launch orchestration \\
+
+Core control logic &
+Controller routes among planner, researcher, engineer, idea, and termination roles &
+Commands create launch plans; managed backends execute workflows inside project context \\
+
+State model &
+Shared context variables, message history transforms, working directory &
+\texttt{GaussProject}, runtime/cache/workflow directories, child session metadata \\
+
+Agent identity &
+Many specialized agents with explicit task roles &
+Generic tool-calling agent runtime plus workflow-specific launch behavior \\
+
+Execution style &
+Scientific reasoning, coding, formatting, summarizing, control loops &
+Formalization, proof, review, refactor, and project-scoped Lean assistance \\
+
+Best evaluation fit &
+Scientific workflow reliability and failure taxonomy &
+Formalization support and Lean workflow quality \\
+
+Main weakness for the proposal &
+Complex control graph can hide emergent failure chains &
+Less aligned with cosmology workflow structure as a primary agent benchmark \\
+\end{longtable}
+
+\section{Implications for the Proposal}
+
+\subsection{Why CMBAgent Should Stay Central}
+The proposal in \texttt{Cambagent\_lab\_proposal.pdf} is mainly about evaluating
+scientific agent reliability across planning, tool-grounded work, inference,
+and error propagation. CMBAgent maps naturally onto that because:
+\begin{itemize}[leftmargin=1.5em]
+\item its internal roles already reflect those stages,
+\item its controller makes routing errors observable,
+\item its executor split makes reasoning versus execution easier to separate,
+\item its domain-specific context agents allow science-specific grounding.
+\end{itemize}
+
+\subsection{Why OpenGauss Should Be Complementary}
+OpenGauss should remain in the project, but as a complementary component. It is
+especially useful for:
+\begin{itemize}[leftmargin=1.5em]
+\item formalizing mathematical claims that appear in scientific workflows,
+\item testing whether informal reasoning can be translated into Lean-style
+checked structure,
+\item comparing free-form scientific reasoning with stricter formal artifacts,
+\item and running experiments on a real Lean project such as
+\texttt{projects/LeanCourse25}.
+\end{itemize}
+
+In proposal terms, OpenGauss is best viewed as \textbf{support for the
+evaluation framework}, not as the same kind of evaluated agent as CMBAgent.
+
+\subsection{Recommended Minimal Division of Labor}
+\begin{itemize}[leftmargin=1.5em]
+\item Use CMBAgent as the primary object of scientific workflow evaluation.
+\item Use OpenGauss when the benchmark needs a formalization or proof-oriented
+companion task.
+\item Compare them only where the task definition makes that comparison fair.
+\item Avoid judging OpenGauss as though it were a cosmology workflow graph, and
+avoid judging CMBAgent as though it were a dedicated Lean project shell.
+\end{itemize}
+
+\section{A Practical Mental Model}
+If the project is viewed as a lab, then the simplest mental model is:
+\begin{itemize}[leftmargin=1.5em]
+\item \textbf{CMBAgent} is the experimental scientific workflow system being
+studied.
+\item \textbf{OpenGauss} is a specialized companion environment for formal and
+Lean-related tasks that can support parts of the evaluation program.
+\end{itemize}
+
+This single distinction removes much of the confusion between the two
+repositories. They both use LLM-driven agents, but they are architected for
+different layers of work.
+
+\section{Conclusion}
+The deep structural difference between the repositories is now clear.
+CMBAgent is a multi-agent workflow graph with explicit role decomposition and
+handoff control. OpenGauss is a project-centered orchestration environment for
+Lean workflows, with a generic tool-calling agent runtime and managed child
+sessions.
+
+For the proposal, this means CMBAgent should remain the main evaluated agent
+framework, while OpenGauss should be kept minimal and complementary. That
+division is not a compromise; it is the cleanest architectural reading of the
+two codebases.
+
+\end{document}

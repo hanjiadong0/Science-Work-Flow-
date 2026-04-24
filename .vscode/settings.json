@@ -1,0 +1,35 @@
+{
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "latexmk-local-perl",
+      "tools": [
+        "latexmk-local-perl"
+      ]
+    }
+  ],
+  "latex-workshop.latex.tools": [
+    {
+      "name": "latexmk-local-perl",
+      "command": "cmd.exe",
+      "args": [
+        "/c",
+        "%WORKSPACE_FOLDER%\\scripts\\latexmk-local.cmd",
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "-pdf",
+        "-outdir=%OUTDIR%",
+        "%DOC%"
+      ],
+      "env": {}
+    }
+  ],
+  "latex-workshop.latex.clean.command": "cmd.exe",
+  "latex-workshop.latex.clean.args": [
+    "/c",
+    "%WORKSPACE_FOLDER%\\scripts\\latexmk-local.cmd",
+    "-outdir=%OUTDIR%",
+    "-c",
+    "%TEX%"
+  ]
+}
