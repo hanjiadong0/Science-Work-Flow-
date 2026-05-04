@@ -19,6 +19,7 @@ This repository is now intentionally minimal. It keeps only the evaluation scaff
 - `docs/data_science_bridge.md`
 - `docs/trial_evaluation_modes.md`
 - `docs/open_agents_quickstart.md`
+- `docs/local_agent_runbook.md`
 - `references/clear/README.md`
 - `references/lean/README.md`
 - `external/cmbagent`
@@ -88,7 +89,8 @@ script.
 
 ## Open The Two Agents
 
-The shortest instructions for both agents are in `docs/open_agents_quickstart.md`.
+The shortest instructions for the original two agents are in `docs/open_agents_quickstart.md`.
+The expanded local runbook for all currently cloned paper agents is in `docs/local_agent_runbook.md`.
 
 The shared Python environment for both agents is `.venv-agents`, and the current OpenGauss Lean experiment project is exposed inside this repo at `projects\LeanCourse25` while still pointing to your real clone `C:\Users\Anwender\LEANCOURSE\LeanCourse25` with remote `git@github.com:hanjiadong0/LeanCourse25.git`.
 
